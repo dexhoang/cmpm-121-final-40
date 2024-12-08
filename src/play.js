@@ -1,3 +1,52 @@
+// This is what i was working on earlier
+const PlantTypes = {
+    Sunflower: {
+        name: 'Sunflower',
+        texture: 'Sunflower',
+        growthConditions: {
+            waterLevel: 50,
+            sunLevel: 70,
+            neighborsNeeded: 0,
+        },
+        finalGrowthConditions: {
+            waterLevel: 100,
+            sunLevel: 90,
+        },
+        uniqueGrowthCondition: (field, neighbors) =>
+            neighbors.every(neighbor => neighbor.plantLevel === 0), // No neighbors
+    },
+    Mushroom: {
+        name: 'Mushroom',
+        texture: 'Mushroom',
+        growthConditions: {
+            waterLevel: 60,
+            sunLevel: 30,
+            neighborsNeeded: 1,
+        },
+        finalGrowthConditions: {
+            waterLevel: 120,
+            sunLevel: 50,
+        },
+        uniqueGrowthCondition: (field, neighbors) =>
+            neighbors.some(neighbor => neighbor.plantLevel > 0 && neighbor.texture === 'Herb'), // Neighbor with Herbs
+    },
+    Herb: {
+        name: 'Herb',
+        texture: 'Herb',
+        growthConditions: {
+            waterLevel: 40,
+            sunLevel: 50,
+            neighborsNeeded: 2,
+        },
+        finalGrowthConditions: {
+            waterLevel: 80,
+            sunLevel: 60,
+        },
+        uniqueGrowthCondition: (field, neighbors) =>
+            neighbors.filter(neighbor => neighbor.plantLevel > 0).length >= 2, // At least 2 neighbors with plants
+    },
+};
+
 let shouldDisplayAutoSave = true;
 
 class Play extends Phaser.Scene {
@@ -182,7 +231,8 @@ class Play extends Phaser.Scene {
         }
     }
     
-        if (this.fields && this.fields.length > 0) {
+        // this is fthe original function
+        /*if (this.fields && this.fields.length > 0) {
             this.fields.forEach(field => {
                 const waterThreshold = 50;
                 const sunThreshold = 50;
@@ -208,7 +258,41 @@ class Play extends Phaser.Scene {
                     }
                 }
             })
-        }
+        }*/
+
+            // this is the updated function
+            if (this.fields && this.fields.length > 0) {
+                this.fields.forEach(field => {
+                    const plantType = field.plantType; // Retrieve the plant type
+                    if (!plantType) return; // Skip fields with no plants
+        
+                    const neighborsWithPlants = this.getNeighbors(field).filter(neighbor => neighbor.plantLevel > 0).length;
+        
+                    // Check initial growth conditions
+                    if (
+                        field.waterLevel >= plantType.growthConditions.waterLevel &&
+                        field.sunLevel >= plantType.growthConditions.sunLevel &&
+                        neighborsWithPlants >= plantType.growthConditions.neighborsNeeded
+                    ) {
+                        if (field.plantLevel === 1) {
+                            this.updatePlantTexture(field, 2);
+                            field.waterLevel -= plantType.growthConditions.waterLevel;
+                        }
+                    }
+        
+                    // Check final growth conditions
+                    if (
+                        field.waterLevel >= plantType.finalGrowthConditions.waterLevel &&
+                        field.sunLevel >= plantType.finalGrowthConditions.sunLevel
+                    ) {
+                        if (field.plantLevel === 2) {
+                            this.updatePlantTexture(field, 3);
+                            this.incrementCounter();
+                            field.waterLevel -= plantType.finalGrowthConditions.waterLevel;
+                        }
+                    }
+                });
+            }
     
         if (this.stage3Counter >= 10) {
             this.winText = this.add.text(
@@ -289,7 +373,8 @@ class Play extends Phaser.Scene {
         });
     }
     
-    showSowMenu(field) {
+    // these are the original functions 
+    /*showSowMenu(field) {
         // Show plant choices near the selected field
         const sunflower = Localization.get('sunflower');
         const mushroom = Localization.get('mushroom');
@@ -420,7 +505,173 @@ class Play extends Phaser.Scene {
         if (col > 0) neighbors.push(this.fields[fieldIndex - 1]);
         if (col < gridCols - 1) neighbors.push(this.fields[fieldIndex + 1]);
         return neighbors;
-    }
+    }*/
+
+        // these are updated functions
+        showSowMenu(field) {
+            // Show plant choices near the selected field
+            const options = Object.keys(PlantTypes); // Dynamically fetch plant types
+            const optionY = field.sprite.y - 20;
+            const choiceTexts = [];
+            
+            options.forEach((key, index) => {
+                const localizedText = Localization.get(key);
+        
+                // Create button for each option
+                const choiceText = this.add.text(field.sprite.x + index * 80 - 80, optionY, localizedText, {
+                    fontSize: '12px',
+                    backgroundColor: '#358f39',
+                    padding: { x: 5, y: 2 },
+                }).setInteractive();
+                
+                // Update field with selected plant
+                choiceText.on('pointerdown', () => {
+                    console.log(`Planted ${key} on field ${field.index}`);
+                    field.sprite.setTexture(PlantTypes[key].texture); // Use plant's texture from PlantTypes
+                    field.plantLevel = 1;
+                    choiceTexts.forEach(text => text.destroy()); // Remove plant choice buttons
+                    this.undoStack.push(this.getCurrentState());
+                });
+                choiceTexts.push(choiceText);
+            });
+        }
+        
+        reap(field) {
+            if (field.plantLevel === 3) {
+                this.undoStack.push(this.getCurrentState());
+                field.plantLevel = 0;
+                this.updatePlantTexture(field, 0);
+                this.stage3Counter--;
+                
+                this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+            } else {
+                console.log(`No plant to reap in field ${field.index}`);
+            }
+        }
+        
+        sow(field) {
+            if (field.plantLevel === 0) {
+                // Create plant selection menu
+                this.undoStack.push(this.getCurrentState());
+                this.showSowMenu(field); // Use the updated sow menu method
+                
+            } else {
+                console.log(`Field ${field.index} already has a plant`);
+            }
+        }
+        
+        /*// new
+        updatePlantTexture(field, level) {
+            console.log("updatePlanttexture");
+            const plantType = Object.values(PlantTypes).find(pt => pt.texture === field.sprite.texture.key);
+            if (!plantType) {
+                console.error(`Invalid texture key: ${field.sprite.texture.key}`);
+                return;
+            }
+        
+            const textureKey = this.getNextTexture(plantType.texture, level);
+            if (textureKey) {
+                field.sprite.setTexture(textureKey);
+                field.plantLevel = level;
+                console.log(`Field ${field.index} updated to stage ${level} with texture ${textureKey}`);
+            }
+        }*/
+
+        // old 
+        updatePlantTexture(field, level) {
+            let textureKey = '';
+            console.log("key: " + field.sprite.texture.key);
+    
+            switch (level) {
+                case 1:
+                    textureKey = this.getNextTexture(plantType.texture, level);
+                    console.log("1");
+                    break;
+                case 2:
+                    textureKey = this.getNextTexture(field.sprite.texture.key, level);
+                    console.log("2");
+                    break;
+                case 3:
+                    textureKey = this.getNextTexture(field.sprite.texture.key, level);
+                    console.log("3");
+                    break;
+            }
+    
+            if (textureKey) {
+                field.sprite.setTexture(textureKey);
+                field.plantLevel = level;
+                console.log("sprite: " + field.sprite);
+                console.log("Next stage: " + field.plantLevel);
+                console.log("textureKey: " + textureKey);
+            }
+        }
+
+        /*// new
+        getNextTexture(baseTexture, stage) {
+            console.log("In getNextTexture function");
+            const plantType = Object.values(PlantTypes).find(pt => pt.texture === baseTexture);
+            if (!plantType) {
+                console.error(`Texture key "${baseTexture}" not found in PlantTypes.`);
+                return baseTexture;
+            }
+        
+            const textures = [plantType.texture, `${plantType.texture}2`, `${plantType.texture}3`];
+            return textures[stage - 1] || baseTexture; // Safeguard against invalid stages
+        }*/
+    
+        // old
+        getNextTexture(currentTexture, stage) {
+            const plantMap = {
+                Sunflower: ['Sunflower', 'Sunflower2', 'Sunflower3'],
+                Mushroom: ['Mushroom', 'Mushroom2', 'Mushroom3'],
+                Herb: ['Herb', 'Herb2', 'Herb3'],
+            };
+        
+            // Extract base name by removing any numbers at the end (e.g., "Sunflower2" -> "Sunflower")
+            const baseTexture = currentTexture.replace(/\d+$/, '');
+            console.log("Base texture: " + baseTexture);
+        
+            const plantTextures = plantMap[baseTexture];
+            console.log("plantTextures before: " + plantTextures);
+        
+            if (!plantTextures) {
+                console.error(`Texture key "${baseTexture}" not found in plantMap.`);
+                return currentTexture; // Return the original texture if not found
+            }
+        
+            // Check if the stage index is valid
+            if (stage > 0 && stage <= plantTextures.length) {
+                console.log("plantTextures after: " + plantTextures[stage - 1]);
+                return plantTextures[stage - 1];
+            }
+        
+            console.error(`Invalid stage "${stage}" for base texture "${baseTexture}".`);
+            return currentTexture; // Return the original texture if stage is invalid
+        } 
+        
+        getNeighbors(field) {
+            const neighbors = [];
+            const fieldIndex = field.index;
+            const gridCols = 7;
+            const gridRows = 4;
+            const row = Math.floor(fieldIndex / gridCols);
+            const col = fieldIndex % gridCols;
+        
+            // Ensure fields array is valid
+            if (!this.fields || this.fields.length === 0) {
+                console.error('Fields array is empty or not initialized!');
+                return neighbors;
+            }
+        
+            // Check neighbors in 4 directions (up, down, left, right)
+            if (row > 0) neighbors.push(this.fields[fieldIndex - gridCols]);
+            if (row < gridRows - 1) neighbors.push(this.fields[fieldIndex + gridCols]);
+            if (col > 0) neighbors.push(this.fields[fieldIndex - 1]);
+            if (col < gridCols - 1) neighbors.push(this.fields[fieldIndex + 1]);
+        
+            return neighbors;
+        } 
+        // -------------------------------------------------------------------------------------------
 
     saveGameState() {
         /*const currentState = this.getCurrentState();
