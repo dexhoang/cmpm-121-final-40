@@ -48,6 +48,8 @@ const PlantTypes = {
 };
 
 let shouldDisplayAutoSave = true;
+let shouldDisplayNoSave = false;
+
 // Function to move the player within the boundary
 function movePlayer(dx, dy) {
     const farmer = this.farmer; // Use farmer sprite directly
@@ -861,8 +863,9 @@ class Play extends Phaser.Scene {
             
             this.undoStack = [this.getCurrentState()]; // Initialize undo stack for new game
             this.redoStack = []; // Initialize redo stack
+            shouldDisplayNoSave = true
             this.time.delayedCall(1000, () => promptText.destroy());
-            
+            //clearHtmlText();
         }
     }
     
