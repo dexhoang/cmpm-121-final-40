@@ -423,11 +423,17 @@ class Play extends Phaser.Scene {
     }
 
     saveGameState() {
-        const currentState = this.getCurrentState();
+        /*const currentState = this.getCurrentState();
         this.undoStack.push(currentState);  // Always push the current state to undo stack
         localStorage.setItem('gameState', JSON.stringify(currentState));  // Save to localStorage
         //console.log("Game state saved", currentState);  // For debugging
-        //this.redoStack = [];  // Clear redo stack after a new action
+        //this.redoStack = [];  // Clear redo stack after a new action*/
+
+        const currentState = this.getCurrentState();
+        if (JSON.stringify(this.undoStack[this.undoStack.length - 1]) !== JSON.stringify(currentState)) {
+            this.undoStack.push(currentState);
+        }
+        localStorage.setItem('gameState', JSON.stringify(currentState));
     }
     
     getCurrentState() {
