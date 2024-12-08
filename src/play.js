@@ -48,6 +48,24 @@ const PlantTypes = {
 };
 
 let shouldDisplayAutoSave = true;
+// Function to move the player within the boundary
+function movePlayer(dx, dy) {
+    const farmer = this.farmer; // Use farmer sprite directly
+    const boundary = {
+        top: 50,
+        right: this.cameras.main.width,
+        bottom: this.cameras.main.height,
+        left: 0,
+    };
+
+    // Update the player's position, ensuring it stays within the boundary
+    if (farmer.x + dx >= boundary.left && farmer.x + dx <= boundary.right) {
+        farmer.x += dx;
+    }
+    if (farmer.y + dy >= boundary.top && farmer.y + dy <= boundary.bottom) {
+        farmer.y += dy;
+    }
+}
 
 class Play extends Phaser.Scene {
     constructor() {
@@ -201,7 +219,8 @@ class Play extends Phaser.Scene {
 
     update() {
         const moveSpeed = 3;
-    if (this.farmer) {
+
+    /*if (this.farmer) {
         if (this.keyA && this.keyA.isDown) {
             if (!this.movementTracked) { // Ensure state is only pushed once per movement
                 this.undoStack.push(this.getCurrentState());
@@ -229,10 +248,37 @@ class Play extends Phaser.Scene {
         } else {
             this.movementTracked = false; // Reset when no movement
         }
-    }
+    }*/
+
+        if (this.farmer) {
+            let dx = 0;
+            let dy = 0;
+
+            // Movement logic
+            if (this.keyA.isDown) {
+                dx = -moveSpeed; // Move left
+            } else if (this.keyD.isDown) {
+                dx = moveSpeed; // Move right
+            } else if (this.keyW.isDown) {
+                dy = -moveSpeed; // Move up
+            } else if (this.keyS.isDown) {
+                dy = moveSpeed; // Move down
+            }
+
+            // Track movement for undo/redo
+            if (dx !== 0 || dy !== 0) {
+                if (!this.movementTracked) {
+                    this.undoStack.push(this.getCurrentState()); // Track state on first move
+                    this.movementTracked = true;
+                }
+                movePlayer.call(this, dx, dy); // Move the player
+            } else {
+                this.movementTracked = false; // Reset when no movement
+            }
+        }
     
         // this is fthe original function
-        /*if (this.fields && this.fields.length > 0) {
+        if (this.fields && this.fields.length > 0) {
             this.fields.forEach(field => {
                 const waterThreshold = 50;
                 const sunThreshold = 50;
@@ -258,10 +304,10 @@ class Play extends Phaser.Scene {
                     }
                 }
             })
-        }*/
+        }
 
             // this is the updated function
-            if (this.fields && this.fields.length > 0) {
+            /*if (this.fields && this.fields.length > 0) {
                 this.fields.forEach(field => {
                     const plantType = field.plantType; // Retrieve the plant type
                     if (!plantType) return; // Skip fields with no plants
@@ -292,7 +338,7 @@ class Play extends Phaser.Scene {
                         }
                     }
                 });
-            }
+            }*/
     
         if (this.stage3Counter >= 10) {
             this.winText = this.add.text(
@@ -374,7 +420,7 @@ class Play extends Phaser.Scene {
     }
     
     // these are the original functions 
-    /*showSowMenu(field) {
+    showSowMenu(field) {
         // Show plant choices near the selected field
         const sunflower = Localization.get('sunflower');
         const mushroom = Localization.get('mushroom');
@@ -505,9 +551,9 @@ class Play extends Phaser.Scene {
         if (col > 0) neighbors.push(this.fields[fieldIndex - 1]);
         if (col < gridCols - 1) neighbors.push(this.fields[fieldIndex + 1]);
         return neighbors;
-    }*/
+    }
 
-        // these are updated functions
+        /*// these are updated functions
         showSowMenu(field) {
             // Show plant choices near the selected field
             const options = Object.keys(PlantTypes); // Dynamically fetch plant types
@@ -558,7 +604,7 @@ class Play extends Phaser.Scene {
             } else {
                 console.log(`Field ${field.index} already has a plant`);
             }
-        }
+        }*/
         
         /*// new
         updatePlantTexture(field, level) {
