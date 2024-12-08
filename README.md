@@ -48,3 +48,31 @@ Our team hopes to complete this final project in a timely manner without having 
 ## Reflection
 
 ### After completing this part of the project, we realized that meeting the requirements was not feasible using Unity. As a result, we made a quick decision to switch to Phaser with TypeScript. This change in engines allowed us to work on the requirements more effectively. Additionally, we recognized that our approach to dividing tasks could have been better. Instead of assigning specific parts of the project to only a few team members, it would have been more efficient to distribute the workload evenly among everyone. This collaborative approach would have enhanced overall productivity and ensured a more balanced contribution from the entire team.
+
+# Devlog Entry - [Dec 8, 2024]
+
+## How we satisfied the software requirements
+
+### [F0.a - F0.g] Same as last week.
+### [F1.a - F1.d] Same as the last entry.
+### [F2.a] 
+### [F2.b]
+### [F2.c]
+### [F2.d]
+
+## Reflection
+
+# Devlog Entry - [Dec 8, 2024]
+
+## How we satisfied the software requirements
+
+### [F0.a - F0.g] Same as last week.
+### [F1.a - F1.d] Same as the last entry.
+### [F2.a-F2.d] Same as last entry
+### [F3.a] 
+### [F3.b]
+### [F3.c]
+### [F3.d]
+
+## Reflection
+
