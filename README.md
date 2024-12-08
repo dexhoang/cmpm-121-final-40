@@ -68,11 +68,19 @@ Our team hopes to complete this final project in a timely manner without having 
 
 ### [F0.a - F0.g] Same as last week.
 ### [F1.a - F1.d] Same as the last entry.
-### [F2.a-F2.d] Same as last entry
-### [F3.a] 
-### [F3.b]
+### [F2.a-F2.d] Same as last entry. 
+### [F3.a Internationalization] The game uses a localization function to translate the texts and messages between different languages, making it switchable to different languages including english. The player is able to switch different languages using the scroll buttotn by the canvas. It's able to support a logographic script and a right to left script for languages that need those scripts such as chinese and arabic. When adding more languages, all you should need to do is add another file into the locales file, and make it look similar to the english file. You shouldn't need to change anyhting else. I used a lot of debugging to determine if the game is being translated. The code below shows which json file is being used and what that file constains. 
+            console.log("language: " + `assets/locales/${languageCode}.json`);
+            const response = await fetch(`assets/locales/${languageCode}.json`);
+            if (!response.ok) {
+                throw new Error(`Could not load ${languageCode}.json`);
+            }
+            this.languageData = await response.json();
+            console.log(JSON.stringify(this.languageData, null, 2));  // Log the loaded data
+            
+### [F3.b Localization] The player is able to switch different languages with the scroll buttotn by the canvas. They can switch between english, spanish, chinese(logographic) and arabic(right to left). I used chatGPT to help tranlsate the languages in en.json to the other 3 languages. I tried using google translate but with the chinese and arabic, it's hard to determin if the language is consistent with it's own symbols. The game is set up in english origianlly but the player has the option to change it after launching the game, so there's no 4 different versions of the game. 
 ### [F3.c]
 ### [F3.d]
 
 ## Reflection
-
+### We learned that we needed to add more button functions as well as other functions for making the game work on mobile. 
