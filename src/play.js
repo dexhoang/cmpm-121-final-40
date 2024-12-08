@@ -217,7 +217,52 @@ class Play extends Phaser.Scene {
 
         // Listen for language changes and update texts
         document.addEventListener('languageChanged', this.updateLocalizedText.bind(this));
+
+        // Add virtual buttons for mobile controls
+    const buttonSize = 50;
+
+    this.upButton = this.add.text(100, this.cameras.main.height - 150, '↑', {
+        fontSize: '32px',
+        backgroundColor: '#333',
+        color: '#fff',
+        padding: { x: 10, y: 10 },
+    }).setInteractive();
+
+    this.downButton = this.add.text(100, this.cameras.main.height - 50, '↓', {
+        fontSize: '32px',
+        backgroundColor: '#333',
+        color: '#fff',
+        padding: { x: 10, y: 10 },
+    }).setInteractive();
+
+    this.leftButton = this.add.text(50, this.cameras.main.height - 100, '←', {
+        fontSize: '32px',
+        backgroundColor: '#333',
+        color: '#fff',
+        padding: { x: 10, y: 10 },
+    }).setInteractive();
+
+    this.rightButton = this.add.text(150, this.cameras.main.height - 100, '→', {
+        fontSize: '32px',
+        backgroundColor: '#333',
+        color: '#fff',
+        padding: { x: 10, y: 10 },
+    }).setInteractive();
+
+    // Button input handlers
+    this.upButton.on('pointerdown', () => this.handleVirtualInput(0, -1));
+    this.downButton.on('pointerdown', () => this.handleVirtualInput(0, 1));
+    this.leftButton.on('pointerdown', () => this.handleVirtualInput(-1, 0));
+    this.rightButton.on('pointerdown', () => this.handleVirtualInput(1, 0));
     }
+
+    handleVirtualInput(dx, dy) {
+        const moveSpeed = 3;
+        if (this.farmer) {
+            this.undoStack.push(this.getCurrentState()); // Save state for undo/redo
+            movePlayer.call(this, dx * moveSpeed, dy * moveSpeed);
+        }
+    }    
 
     update() {
         const moveSpeed = 3;
@@ -252,7 +297,7 @@ class Play extends Phaser.Scene {
         }
     }*/
 
-        if (this.farmer) {
+        /*if (this.farmer) {
             let dx = 0;
             let dy = 0;
 
@@ -277,7 +322,26 @@ class Play extends Phaser.Scene {
             } else {
                 this.movementTracked = false; // Reset when no movement
             }
-        }
+        }*/
+            let dx = 0;
+            let dy = 0;
+        
+            // Keyboard input handling
+            if (this.keyA.isDown) dx = -moveSpeed;
+            if (this.keyD.isDown) dx = moveSpeed;
+            if (this.keyW.isDown) dy = -moveSpeed;
+            if (this.keyS.isDown) dy = moveSpeed;
+        
+            // Only move when there's an input
+            if (dx !== 0 || dy !== 0) {
+                if (!this.movementTracked) {
+                    this.undoStack.push(this.getCurrentState()); // Save state for undo/redo
+                    this.movementTracked = true;
+                }
+                movePlayer.call(this, dx, dy);
+            } else {
+                this.movementTracked = false;
+            }
     
         // this is fthe original function
         if (this.fields && this.fields.length > 0) {
@@ -865,7 +929,7 @@ class Play extends Phaser.Scene {
             this.redoStack = []; // Initialize redo stack
             shouldDisplayNoSave = true
             this.time.delayedCall(1000, () => promptText.destroy());
-            //clearHtmlText();
+            // clearHtmlText();
         }
     }
     
