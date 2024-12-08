@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>121 Final Project</title>
 
+    <link rel="manifest" href="/manifest.json">
+
     <!-- Google Fonts for Arabic and Chinese -->
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic&family=Noto+Sans+TC&display=swap" rel="stylesheet">
 
@@ -32,6 +34,7 @@
     <button data-localize="button_exit"></button>
     <h1 data-localize="welcome_message"></h1>
     <h1 data-localize="auto-save"></h1>
+    <!-- <h1 data-localize="no-save2"></h1> -->
 
     <select onchange="changeLanguage(this.value)">
       <option value="en">English</option>
@@ -39,6 +42,16 @@
       <option value="zh">Chinese</option>
       <option value="ar">Arabic</option>
     </select>
+
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/service-worker.js').then((registration) => {
+          console.log('Service Worker registered with scope:', registration.scope);
+        }).catch((error) => {
+          console.error('Service Worker registration failed:', error);
+        });
+      }
+    </script>
 
   </body>
 </html>
