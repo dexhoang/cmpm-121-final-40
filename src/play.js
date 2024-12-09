@@ -540,7 +540,6 @@ this.setupHtmlButtons();
             this.scene.resume();
 
             this.time.delayedCall(1000, () => loadText.destroy());
-            clearHtmlText();
 
             // Remove event listeners to prevent duplicate actions
             yesButton.removeEventListener('click', onYesClick);
@@ -564,7 +563,6 @@ this.setupHtmlButtons();
             this.scene.resume();
             
             this.time.delayedCall(1000, () => newText.destroy());
-            clearHtmlText();
 
             // Remove event listeners to prevent duplicate actions
             yesButton.removeEventListener('click', onYesClick);
@@ -600,12 +598,7 @@ this.setupHtmlButtons();
     
     setupSaveLoadButtons() {
         for (let slot = 1; slot <= 3; slot++) {
-            const saveButton = this.add.text(320, 70 + (slot - 1) * 50, `${Localization.get('save')}: ${slot}`, {
-                fontSize: '20px',
-                backgroundColor: '#21a99c',
-                padding: { x: 20, y: 10 },
-                align: 'center'
-            }).setInteractive();
+            const saveButton = this.add.text().setInteractive();
     
             saveButton.on('pointerdown', () => {
                 const currentState = this.getCurrentState();
@@ -796,6 +789,8 @@ setupHtmlButtons() {
 
     document.getElementById('next_day').addEventListener('click', function () {
         scene.dayCounter++; // Increment the day counter
+        scene.undoStack.push(scene.getCurrentState());
+        scene.assignRandomLevels();
         scene.saveGameState(); // Save the new game state
         scene.dayText.setText(`${Localization.get('days')}: ${scene.dayCounter}`); // Update day counter UI
         console.log('Next day triggered.');
