@@ -30,8 +30,11 @@
     <script src="./src/LanguageManager.js"></script>
     
     <!-- Game UI -->
-    <button data-localize="button_start"></button>
     <button data-localize="button_exit"></button>
+    <button id="undo" data-localize="undo"></button>
+    <button id="redo" data-localize="redo"></button>
+    <button id="next_day" data-localize="next_day"></button>
+    
     <h1 data-localize="welcome_message"></h1>
     <h1 data-localize="auto-save"></h1>
 
@@ -42,9 +45,17 @@
       <option value="zh">Chinese</option>
       <option value="ar">Arabic</option>
     </select>
-    <button id="loadSlot1">Load Slot 1</button>
-<button id="loadSlot2">Load Slot 2</button>
-<button id="loadSlot3">Load Slot 3</button>
+
+    <!-- Buttons -->
+    <button id="loadSlot1" data-localize="loadSlot1"></button>
+    <button id="loadSlot2" data-localize="loadSlot2"></button>
+    <button id="loadSlot3" data-localize="loadSlot3"></button>
+    <button id="saveSlot1" data-localize="saveSlot1"></button>
+    <button id="saveSlot2" data-localize="saveSlot2"></button>
+    <button id="saveSlot3" data-localize="saveSlot3"></button>
+
+    <button id="yes" data-localize="Y"></button>
+    <button id="no" data-localize="N"></button>
 
     <!-- Service Worker Registration -->
     <script>

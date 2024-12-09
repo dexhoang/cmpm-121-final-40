@@ -118,12 +118,7 @@ this.setupHtmlButtons();
         );
         this.dayText.setOrigin(0.5, 1);
 
-        this.nextDayButton = this.add.text(320, 20, Localization.get('next_day'), {
-            fontSize: '20px',
-            backgroundColor: '#21a99c',
-            padding: { x: 20, y: 10 },
-            align: 'center'
-        }).setInteractive();
+        this.nextDayButton = this.add.text().setInteractive();
         this.nextDayButton.on('pointerdown', () => {
             this.dayCounter++;
             this.undoStack.push(this.getCurrentState());
@@ -424,12 +419,28 @@ this.setupHtmlButtons();
         return neighbors;
     }
 
-    saveGameState() {
-        const currentState = this.getCurrentState();
+    saveGameState(slot) {
+        const currentState = this.getCurrentState(); // Get the current game state
+        localStorage.setItem(`gameStateSlot${slot}`, JSON.stringify(currentState)); // Save to localStorage
+    
+        console.log(`Game saved to slot ${slot}`);
         if (JSON.stringify(this.undoStack[this.undoStack.length - 1]) !== JSON.stringify(currentState)) {
             this.undoStack.push(currentState);
         }
         localStorage.setItem('gameState', JSON.stringify(currentState));
+    
+        // Show visual feedback in HTML
+        const saveButton = document.getElementById(`saveSlot${slot}`);
+        if (saveButton) {
+            saveButton.textContent = `${Localization.get('saving')}...`;
+            saveButton.disabled = true; // Disable button during save
+    
+            // Simulate save delay for feedback
+            setTimeout(() => {
+                saveButton.textContent = `${Localization.get(`saveSlot${slot}`)}`;
+                saveButton.disabled = false; // Re-enable button
+            }, 1000);
+        }
     }
     
     getCurrentState() {
@@ -505,55 +516,84 @@ this.setupHtmlButtons();
     
     
     handleGameStatePrompt() {
+        this.scene.pause();
         const savedState = localStorage.getItem('gameState');
+        const yesButton = document.getElementById('yes');
+        const noButton = document.getElementById('no');
+        const autoSaveElement = document.querySelector('[data-localize="auto-save"]');
+
         if (savedState) {
+        const onYesClick = () => {
+            const loadText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
+                `${Localization.get('loaded')}`, 
+                { font: '20px Arial', color: '#ff0000', wordWrap: { width: 500 } }
+            ).setOrigin(0.5, 0.5);
 
-            // Function to clear the HTML element's text
-            const clearHtmlText = () => {
-                const autoSaveElement = document.querySelector('[data-localize="auto-save"]');
-                if (autoSaveElement) {
-                    autoSaveElement.textContent = ''; // Clear the text
-                }
-            };
-    
-            this.input.keyboard.once('keydown-Y', () => {
-                this.restoreState(JSON.parse(savedState)); // Load the saved state
-                promptText.setText(`${Localization.get('loaded')}`);
-                this.undoStack = [this.getCurrentState()]; // Reset undo stack after loading game state
-                this.redoStack = []; // Clear redo stack
-                shouldDisplayAutoSave = false;
-                if (promptText) {
-                    promptText.setText(`${Localization.get('loaded')}`);
-                }
+            this.restoreState(JSON.parse(savedState)); // Load the saved state
+            loadText.setText(`${Localization.get('loaded')}`);
+            this.undoStack = [this.getCurrentState()]; // Reset undo stack after loading game state
+            this.redoStack = []; // Clear redo stack
+            shouldDisplayAutoSave = false;
+            if (loadText) {
+                loadText.setText(`${Localization.get('loaded')}`);
+            }
+            this.scene.resume();
 
-                this.time.delayedCall(1000, () => promptText.destroy());
-                clearHtmlText();
-            });
-    
-            this.input.keyboard.once('keydown-N', () => {
-                localStorage.removeItem('gameState'); // Clear saved state
-                promptText.setText(`${Localization.get('new')}`);
-                this.undoStack = [this.getCurrentState()]; // Initialize undo stack for new game
-                this.redoStack = []; // Reset redo stack
-                shouldDisplayAutoSave = false;
-                if (promptText) {
-                    promptText.setText(`${Localization.get('new')}`);
-                }
-                this.time.delayedCall(1000, () => promptText.destroy());
-                clearHtmlText();
-            });
+            this.time.delayedCall(1000, () => loadText.destroy());
+            clearHtmlText();
+
+            // Remove event listeners to prevent duplicate actions
+            yesButton.removeEventListener('click', onYesClick);
+            noButton.removeEventListener('click', onNoClick);
+        };
+
+        const onNoClick = () => {
+            const newText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
+                `${Localization.get('auto-save')}`, 
+                { font: '20px Arial', color: '#ff0000', wordWrap: { width: 500 } }
+            ).setOrigin(0.5, 0.5);
+
+            localStorage.removeItem('gameState'); // Clear saved state
+            newText.setText(`${Localization.get('new')}`);
+            this.undoStack = [this.getCurrentState()]; // Initialize undo stack for new game
+            this.redoStack = []; // Reset redo stack
+            shouldDisplayAutoSave = false;
+            if (newText) {
+                newText.setText(`${Localization.get('new')}`);
+            }
+            this.scene.resume();
+            
+            this.time.delayedCall(1000, () => newText.destroy());
+            clearHtmlText();
+
+            // Remove event listeners to prevent duplicate actions
+            yesButton.removeEventListener('click', onYesClick);
+            noButton.removeEventListener('click', onNoClick);
+        };
+
+        yesButton.addEventListener('click', onYesClick);
+        noButton.addEventListener('click', onNoClick);
 
         } else {
+            // Remove buttons and auto-save message
+            if (yesButton) yesButton.style.display = 'none';
+            if (noButton) noButton.style.display = 'none';
+            if (autoSaveElement) autoSaveElement.style.display = 'none';
+    
+            this.scene.resume();
+    
             // Handle case for no saved state
             const promptText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
                 `${Localization.get('no-save2')}`, 
                 { font: '20px Arial', color: '#ff0000', wordWrap: { width: 500 } }
             ).setOrigin(0.5, 0.5);
-            
+            if (promptText) {
+                promptText.setText(`${Localization.get('no-save2')}`);
+            }
+    
             this.undoStack = [this.getCurrentState()]; // Initialize undo stack for new game
             this.redoStack = []; // Initialize redo stack
             this.time.delayedCall(1000, () => promptText.destroy());
-            
         }
     }
     
@@ -605,12 +645,7 @@ this.setupHtmlButtons();
 
     setupUndoRedoButtons() {
         // Create Undo button
-        this.undoButton = this.add.text(30, 20, Localization.get('undo'), {
-            fontSize: '20px',
-            backgroundColor: 'green',
-            padding: { x: 20, y: 10 },
-            align: 'center'
-        }).setInteractive();
+        this.undoButton = this.add.text().setInteractive();
     
         this.undoButton.on('pointerdown', () => {
             this.undo();
@@ -618,12 +653,7 @@ this.setupHtmlButtons();
         });
     
         // Create Redo button
-        this.redoButton = this.add.text(150, 20, Localization.get('redo'), {
-            fontSize: '20px',
-            backgroundColor: '#f0a500',
-            padding: { x: 20, y: 10 },
-            align: 'center'
-        }).setInteractive();
+        this.redoButton = this.add.text().setInteractive();
     
         this.redoButton.on('pointerdown', () => {
             this.redo();
@@ -696,20 +726,11 @@ updateLocalizedText() {
     if (this.dayText) {
         this.dayText.setText(`${Localization.get('days')}: ${this.dayCounter}`);
     }
-    if (this.nextDayButton) {
-        this.nextDayButton.setText(Localization.get('next_day'));
-    }
     if (this.reapButton) {
         this.reapButton.setText(Localization.get('reap'));
     }
     if (this.sowButton) {
         this.sowButton.setText(Localization.get('sow'));
-    }
-    if (this.undoButton) {
-        this.undoButton.setText(Localization.get('undo'));
-    }
-    if (this.redoButton) {
-        this.redoButton.setText(Localization.get('redo'));
     }
     if (this.sunText) {
         this.sunText.setText(Localization.get('sun'));
@@ -724,10 +745,24 @@ updateLocalizedText() {
         this.winText.setText(`${Localization.get('you_win')}`);
     } 
 }
+
 // Inside your scene or setup function
 setupHtmlButtons() {
     // Reference the Phaser scene context
     const scene = this;
+
+    // Localize all buttons with a "data-localize" attribute
+    const buttons = document.querySelectorAll('[data-localize]');
+    buttons.forEach(button => {
+        const key = button.getAttribute('data-localize');
+        const localizedText = Localization.get(key); // Fetch the localized string
+        button.textContent = localizedText; // Update button text
+    });
+
+    // Reference the auto-save message element
+    const autoSaveElement = document.querySelector('[data-localize="auto-save"]');
+    const yesButton = document.getElementById('yes');
+    const noButton = document.getElementById('no');
 
     // Add event listeners to the HTML buttons
     document.getElementById('loadSlot1').addEventListener('click', function () {
@@ -740,6 +775,59 @@ setupHtmlButtons() {
 
     document.getElementById('loadSlot3').addEventListener('click', function () {
         scene.loadGameState(3); // Load save slot 3
+    });
+    document.getElementById('undo').addEventListener('click', function () {
+        scene.undo();
+    });
+    document.getElementById('redo').addEventListener('click', function () {
+        scene.redo();
+    });
+    
+    // Save buttons for slots
+    document.getElementById('saveSlot1').addEventListener('click', function () {
+        scene.saveGameState(1); // Save to slot 1
+    });
+    document.getElementById('saveSlot2').addEventListener('click', function () {
+        scene.saveGameState(2); // Save to slot 2
+    });
+    document.getElementById('saveSlot3').addEventListener('click', function () {
+        scene.saveGameState(3); // Save to slot 3
+    });
+
+    document.getElementById('next_day').addEventListener('click', function () {
+        scene.dayCounter++; // Increment the day counter
+        scene.saveGameState(); // Save the new game state
+        scene.dayText.setText(`${Localization.get('days')}: ${scene.dayCounter}`); // Update day counter UI
+        console.log('Next day triggered.');
+    });
+    
+    // Add event listeners to Yes and No buttons
+    const hidePromptElements = () => {
+        // Hide the auto-save message
+        if (autoSaveElement) autoSaveElement.style.display = 'none';
+
+        // Hide the Yes and No buttons
+        if (yesButton) yesButton.style.display = 'none';
+        if (noButton) noButton.style.display = 'none';
+    };
+
+    yesButton.addEventListener('click', function () {
+        const savedState = localStorage.getItem('gameState');
+        if (savedState) {
+            scene.restoreState(JSON.parse(savedState)); // Restore saved state
+            console.log('Yes button clicked: State restored');
+        } else {
+            console.log('Yes button clicked: No state to restore');
+        }
+
+        hidePromptElements(); // Hide elements after clicking "Yes"
+    });
+
+    noButton.addEventListener('click', function () {
+        localStorage.removeItem('gameState'); // Clear saved state
+        console.log('No button clicked: State cleared');
+
+        hidePromptElements(); // Hide elements after clicking "No"
     });
 }
 
@@ -768,5 +856,3 @@ handleTapMovement(pointer) {
     console.log(`Farmer moving to: (${clampedX}, ${clampedY})`);
 }
 }
-
-// Localization.get('undo')

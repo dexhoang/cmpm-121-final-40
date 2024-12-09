@@ -1,6 +1,6 @@
 {
   "button_start": "Comenzar",
-  "button_exit": "Pausa",
+  "button_exit": "Salir",
   "welcome_message": "¡Bienvenido al juego!",
 
     "next_day": "Siguiente Día",
@@ -10,10 +10,12 @@
     "Sunflower": "Girasol",
     "Mushroom": "Hongo",
     "Herb": "Hierba",
-    "save": "Guardar ranura",
+    "saveSlot1": "Ranura de guardado 1",
+    "saveSlot2": "Ranura de guardado 2",
+    "saveSlot3": "Ranura de guardado 3",
     "undo": "Deshacer",
     "redo": "Rehacer",
-    "saved": "Guardado en la ranura",
+    "saving": "Guardando",
     "auto-save": "¿Quieres cargar el juego? Y/N.",
     "load": "Ranura de guardado cargada ",
     "loaded": "¡Juego cargado!",
@@ -23,6 +25,9 @@
     "sun": "Sol",
     "no-save": "No se encontró ninguna partida en la ranura",
     "no-save2": "No se encontró ninguna partida guardada. Iniciando un nuevo juego...",
+    "loadSlot1": "Cargar Ranura 1",
+    "loadSlot2": "Cargar Ranura 2",
+    "loadSlot3": "Cargar Ranura 3",
     "you_win": "¡Ganaste!"
   }
   
