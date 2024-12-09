@@ -6,7 +6,7 @@ class Play extends Phaser.Scene {
         this.fields = [];
         this.stage3Counter = 0;
         this.dayCounter = 0;
-        this.undoStack = []; // Initialize undo stack
+        this.undoStack = []; 
         this.redoStack = []; 
         
     }
@@ -32,6 +32,8 @@ class Play extends Phaser.Scene {
     }
 
     create() {
+this.setupHtmlButtons();
+        this.input.on('pointerdown', this.handleTapMovement, this);
 
         this.keyA = this.input?.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.A);
         this.keyS = this.input?.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.S);
@@ -424,10 +426,10 @@ class Play extends Phaser.Scene {
 
     saveGameState() {
         const currentState = this.getCurrentState();
-        this.undoStack.push(currentState);  // Always push the current state to undo stack
-        localStorage.setItem('gameState', JSON.stringify(currentState));  // Save to localStorage
-        //console.log("Game state saved", currentState);  // For debugging
-        //this.redoStack = [];  // Clear redo stack after a new action
+        if (JSON.stringify(this.undoStack[this.undoStack.length - 1]) !== JSON.stringify(currentState)) {
+            this.undoStack.push(currentState);
+        }
+        localStorage.setItem('gameState', JSON.stringify(currentState));
     }
     
     getCurrentState() {
@@ -505,14 +507,6 @@ class Play extends Phaser.Scene {
     handleGameStatePrompt() {
         const savedState = localStorage.getItem('gameState');
         if (savedState) {
-            const promptText = this.add.text(this.cameras.main.width / 2, this.cameras.main.height / 2, 
-                `${Localization.get('auto-save')}`, 
-                { font: '20px Arial', color: '#ff0000', wordWrap: { width: 500 } }
-            ).setOrigin(0.5, 0.5);
-            if (promptText) {
-                promptText.setText(`${Localization.get('auto-save')}`);
-                console.log("Auto-save message: " + `${Localization.get('auto-save')}`);
-            } 
 
             // Function to clear the HTML element's text
             const clearHtmlText = () => {
@@ -729,6 +723,49 @@ updateLocalizedText() {
     if (this.winText) {
         this.winText.setText(`${Localization.get('you_win')}`);
     } 
+}
+// Inside your scene or setup function
+setupHtmlButtons() {
+    // Reference the Phaser scene context
+    const scene = this;
+
+    // Add event listeners to the HTML buttons
+    document.getElementById('loadSlot1').addEventListener('click', function () {
+        scene.loadGameState(1); // Load save slot 1
+    });
+
+    document.getElementById('loadSlot2').addEventListener('click', function () {
+        scene.loadGameState(2); // Load save slot 2
+    });
+
+    document.getElementById('loadSlot3').addEventListener('click', function () {
+        scene.loadGameState(3); // Load save slot 3
+    });
+}
+
+handleTapMovement(pointer) {
+    // Get the target position from the tap
+    const targetX = pointer.worldX;
+    const targetY = pointer.worldY;
+
+    // Optional: Limit movement bounds to the game world
+    const clampedX = Phaser.Math.Clamp(targetX, 0, this.game.config.width);
+    const clampedY = Phaser.Math.Clamp(targetY, 0, this.game.config.height);
+
+    // Calculate distance and duration for the movement
+    const distance = Phaser.Math.Distance.Between(this.farmer.x, this.farmer.y, clampedX, clampedY);
+    const duration = distance / 0.2; // Adjust speed by changing the divisor
+
+    // Move farmer using Phaser's tween system
+    this.tweens.add({
+        targets: this.farmer,
+        x: clampedX,
+        y: clampedY,
+        duration: duration,
+        ease: 'Linear'
+    });
+
+    console.log(`Farmer moving to: (${clampedX}, ${clampedY})`);
 }
 }
 
