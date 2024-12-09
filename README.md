@@ -83,4 +83,4 @@ Our team hopes to complete this final project in a timely manner without having 
 ### [F3.d]
 
 ## Reflection
-### We learned that we needed to add more button functions as well as other functions for making the game work on mobile. 
+### We learned that we needed to add more button functions as well as other functions for making the game work on mobile. We had to make a quick change to make buttons from in the game to html buttons. When we worked on getting it to work on mobile and as an app, we realized that it would be better if the buttons were to be on the web browser so that the player doesn't have to deal with the avatar moving to the buttons in the game. 
