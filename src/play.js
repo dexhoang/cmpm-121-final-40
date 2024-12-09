@@ -1,14 +1,17 @@
 let shouldDisplayAutoSave = true;
 
 class Play extends Phaser.Scene {
+
     constructor() {
         super("playScene");
         this.fields = [];
         this.stage3Counter = 0;
-        this.dayCounter = 0;
-        this.undoStack = []; 
+        this.dayCounter = 1;
+        this.undoStack = []; // Initialize undo stack
         this.redoStack = []; 
-        
+        this.yamlData = null;
+        this.parsedData = null;
+        this.weatherAppliedToday = false;
     }
 
     preload() {
@@ -24,6 +27,7 @@ class Play extends Phaser.Scene {
         this.load.image('Mushroom2', './assets/Mush2.png');
         this.load.image('Mushroom3', './assets/Mush3.png');
         this.load.image('farmer', './assets/farmer.png');
+        this.load.text('yamlData', './assets/myData.yaml');
 
         this.load.json('en', 'assets/locales/en.json');
         this.load.json('es', 'assets/locales/es.json');
@@ -32,7 +36,12 @@ class Play extends Phaser.Scene {
     }
 
     create() {
-this.setupHtmlButtons();
+        // Use js-yaml to parse the string into a JavaScript object
+        this.yamlData = this.cache.text.get('yamlData');
+        this.parsedData = jsyaml.load(this.yamlData);
+
+        this.applyWeatherEffects();
+        this.setupHtmlButtons();
         this.input.on('pointerdown', this.handleTapMovement, this);
 
         this.keyA = this.input?.keyboard?.addKey(Phaser.Input.Keyboard.KeyCodes.A);
@@ -55,9 +64,9 @@ this.setupHtmlButtons();
         background.setScale(0.86, 0.86);
 
         const gridStartX = 60;
-        const gridStartY = 240;
-        const gridCols = 7;
-        const gridRows = 4;
+        const gridStartY = 205;
+        const gridCols = this.parsedData.starting_conditions.grid_cols;
+        const gridRows = this.parsedData.starting_conditions.grid_rows;
         const fieldSize = 64;
         let fieldIndex = 0;
 
@@ -80,7 +89,7 @@ this.setupHtmlButtons();
                 fieldIndex++;
 
                 fieldSprite.on('pointerdown', () => {
-                    if (this.farmer) {
+                    if (this.farmer) {                                                                                                 
                         const distance = Phaser.Math.Distance.Between(
                             this.farmer.x,
                             this.farmer.y,
@@ -100,20 +109,20 @@ this.setupHtmlButtons();
         }
 
         this.counterText = this.add.text(
-            this.cameras.main.width / 2,
+            this.cameras.main.width / 2.4,
             this.cameras.main.height - 6,
-            `${Localization.get('stage3')}: ${this.stage3Counter}`,
+            `${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`,
             { font: '20px Arial' }
         );
         this.counterText.setOrigin(0.5, 1);
 
-        this.farmer = this.add.sprite(75, 75, 'farmer');
+        this.farmer = this.add.sprite(140, 125, 'farmer');
         this.farmer.setScale(0.5, 0.5);
 
         this.dayText = this.add.text(
             50,
             this.cameras.main.height - 6,
-            `${Localization.get('days')}: ${this.dayCounter}`,
+            `${Localization.get('Day')}: ${this.dayCounter}`,
             { font: '20px Arial' }
         );
         this.dayText.setOrigin(0.5, 1);
@@ -122,10 +131,19 @@ this.setupHtmlButtons();
         this.nextDayButton.on('pointerdown', () => {
             this.dayCounter++;
             this.undoStack.push(this.getCurrentState());
-            this.dayText?.setText(`${Localization.get('days')}: ${this.dayCounter}`);
+            this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
             this.assignRandomLevels();
             this.saveGameState();
+            this.weatherAppliedToday = false;
         });
+
+        // Weather Text Display
+        this.weatherText = this.add.text(
+            350,
+            this.cameras.main.height -28,
+            "Weather: Normal",
+            { font: "20px Arial", color: "#ffffff" }
+        );
 
         // Handle prompt for continuing previous game
         this.handleGameStatePrompt();
@@ -148,43 +166,47 @@ this.setupHtmlButtons();
     }
 
     update() {
-        const moveSpeed = 3;
-    if (this.farmer) {
-        if (this.keyA && this.keyA.isDown) {
-            if (!this.movementTracked) { // Ensure state is only pushed once per movement
-                this.undoStack.push(this.getCurrentState());
-                this.movementTracked = true;
+        const moveSpeed = 3; 
+            
+        if (this.farmer) {
+            if (this.keyA && this.keyA.isDown) {
+                if (!this.movementTracked) { // Ensure state is only pushed once per movement
+                    this.undoStack.push(this.getCurrentState());
+                    this.movementTracked = true;
+                }
+                this.farmer.x -= moveSpeed;
+            } else if (this.keyD && this.keyD.isDown) {
+                if (!this.movementTracked) {
+                    this.undoStack.push(this.getCurrentState());
+                    this.movementTracked = true;
+                }
+                this.farmer.x += moveSpeed;
+            } else if (this.keyW && this.keyW.isDown) {
+                if (!this.movementTracked) {
+                    this.undoStack.push(this.getCurrentState());
+                    this.movementTracked = true;
+                }
+                this.farmer.y -= moveSpeed;
+            } else if (this.keyS && this.keyS.isDown) {
+                if (!this.movementTracked) {
+                    this.undoStack.push(this.getCurrentState());
+                    this.movementTracked = true;
+                }
+                this.farmer.y += moveSpeed;
+            } else {
+                this.movementTracked = false; // Reset when no movement
             }
-            this.farmer.x -= moveSpeed;
-        } else if (this.keyD && this.keyD.isDown) {
-            if (!this.movementTracked) {
-                this.undoStack.push(this.getCurrentState());
-                this.movementTracked = true;
-            }
-            this.farmer.x += moveSpeed;
-        } else if (this.keyW && this.keyW.isDown) {
-            if (!this.movementTracked) {
-                this.undoStack.push(this.getCurrentState());
-                this.movementTracked = true;
-            }
-            this.farmer.y -= moveSpeed;
-        } else if (this.keyS && this.keyS.isDown) {
-            if (!this.movementTracked) {
-                this.undoStack.push(this.getCurrentState());
-                this.movementTracked = true;
-            }
-            this.farmer.y += moveSpeed;
-        } else {
-            this.movementTracked = false; // Reset when no movement
         }
-    }
+
+        this.applyWeatherEffects();
+        
     
         if (this.fields && this.fields.length > 0) {
             this.fields.forEach(field => {
-                const waterThreshold = 50;
-                const sunThreshold = 50;
-                const finalWaterThreshold = 100;
-                const finalSunThreshold = 80;
+                const waterThreshold = this.parsedData.starting_conditions.water_threshold;
+                const sunThreshold = this.parsedData.starting_conditions.sun_threshold;
+                const finalWaterThreshold = waterThreshold * 2;
+                const finalSunThreshold = sunThreshold * 2;
     
                 const neighborsWithPlants = this.getNeighbors(field).filter(neighbor => neighbor.plantLevel > 0).length;
                 const adjustedWaterThreshold = waterThreshold + 10 * neighborsWithPlants;
@@ -206,8 +228,8 @@ this.setupHtmlButtons();
                 }
             })
         }
-    
-        if (this.stage3Counter >= 10) {
+
+        if (this.stage3Counter >= this.parsedData.victory_conditions.third_stage_plants) {
             this.winText = this.add.text(
                 this.cameras.main.width / 2,
                 this.cameras.main.height / 2,
@@ -217,11 +239,66 @@ this.setupHtmlButtons();
             this.winText.setOrigin(0.5, 0.5);
         }
     }
+
+    applyWeatherEffects() {
+        if (this.weatherAppliedToday) return; // Prevent applying weather effects more than once per day
+
+        const weatherConditions = this.parsedData.weather_randomization;
+        let activeWeather = "Normal"; // Default weather
+    
+        // Iterate through weather conditions from YAML
+        Object.entries(weatherConditions).forEach(([weatherType, config]) => {
+            if (config.isActive && this.dayCounter % config.interval === 0) {
+                console.log(`Weather type active: ${weatherType}`);
+                activeWeather = weatherType;
+    
+                // Apply the effects of the active weather type to the fields
+                this.applyEffectsToFields(config.effects);
+                console.log(config.effects);
+            }
+        });
+    
+        // Update the weather text to reflect the active weather
+        if (this.weatherText) {
+            this.weatherText.setText(`Weather: ${activeWeather}`);
+        }
+
+        this.weatherAppliedToday = true; // Set flag after applying weather effects
+    }
+    
+    applyEffectsToFields(effects) {
+        this.fields.forEach((field) => {
+            if (effects.sun_decrease) {
+                field.sunLevel *= 1 - effects.sun_decrease;
+            }
+            if (effects.sun_increase) {
+                field.sunLevel *= 1 + effects.sun_increase;
+            }
+            if (effects.water_decrease) {
+                field.waterLevel *= 1 - effects.water_decrease;
+            }
+            if (effects.water_increase) {
+                field.waterLevel *= 1 + effects.water_increase;
+            }
+            if (Math.random() > effects.plant_life) { // 20% chance to remove plants
+                field.plantLevel = 1; // Remove the plant
+                field.waterLevel = 0;
+                field.sunLevel = 0;
+                this.updatePlantTexture(field, 1);
+                this.stage3Counter --;
+            }
+            field.sunLevel = Math.round(field.sunLevel);
+            field.waterLevel = Math.round(field.waterLevel);
+        });
+    
+        console.log("Weather effects applied to fields:", effects);
+    }
+
     
     incrementCounter() {
         this.stage3Counter++;
         if (this.counterText) {
-            this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+            this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
         }
         this.undoStack.push(this.getCurrentState());
     }
@@ -231,7 +308,6 @@ this.setupHtmlButtons();
             field.waterLevel += Phaser.Math.Between(0, 10);
             field.sunLevel = Phaser.Math.Between(0, 100);
         });
-        //console.log("Random levels assigned to fields:", this.fields);
     }
 
     handleFieldSelection(field) {
@@ -262,7 +338,7 @@ this.setupHtmlButtons();
             // Reset plant state
             if (field.plantLevel === 3) {
                 this.stage3Counter--;
-                this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
             }
             field.plantLevel = 0;
             this.saveGameState();
@@ -325,7 +401,7 @@ this.setupHtmlButtons();
             this.updatePlantTexture(field, 0);
             this.stage3Counter--;
             
-            this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+            this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
         } else {
             console.log(`No plant to reap in field ${field.index}`);
         }
@@ -403,8 +479,8 @@ this.setupHtmlButtons();
     getNeighbors(field) {
         const neighbors = [];
         const fieldIndex = field.index;
-        const gridCols = 7;
-        const gridRows = 4;
+        const gridCols = this.parsedData.starting_conditions.grid_cols;
+        const gridRows = this.parsedData.starting_conditions.grid_rows;
         const row = Math.floor(fieldIndex / gridCols);
         const col = fieldIndex % gridCols;
         if (!this.fields || this.fields.length === 0) {
@@ -478,8 +554,8 @@ this.setupHtmlButtons();
         this.stage3Counter = state.stage3Counter || 0;
     
         // Update UI
-        this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
-        this.dayText?.setText(`${Localization.get('days')}: ${this.dayCounter}`);
+        this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
+        this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
 
         console.log("State restored:", state);
     }
@@ -701,16 +777,16 @@ showWaterAndSunText(field) {
     this.waterText = this.add.text(
         20, 
         70, 
-        `${Localization.get('water')}: ${field.waterLevel}`, 
-        { font: '14px Arial', fill: 'white' }
+        `${Localization.get('Water Level')}: ${field.waterLevel}`, 
+        { font: '20px Arial', fill: 'white' }
     );
 
     // Display sun level text at a fixed position, just below the water level text
     this.sunText = this.add.text(
         20, 
-        90, 
-        `${Localization.get('sun')}: ${field.sunLevel}`,
-        { font: '14px Arial', fill: 'white' }
+        95, 
+        `${Localization.get('Sun Level')}: ${field.sunLevel}`,
+        { font: '20px Arial', fill: 'white' }
     );
 }
 
@@ -726,13 +802,13 @@ updateLocalizedText() {
         this.sowButton.setText(Localization.get('sow'));
     }
     if (this.sunText) {
-        this.sunText.setText(Localization.get('sun'));
+        this.sunText.setText(Localization.get('Sun Level'));
     }
     if (this.waterText) {
-        this.waterText.setText(Localization.get('water'));
+        this.waterText.setText(Localization.get('Water Level'));
     }
     if (this.counterText) {
-        this.counterText.setText(`${Localization.get('stage3')} ${this.stage3Counter}`);
+        this.counterText.setText(`${Localization.get('Stage 3 Plants')} ${this.stage3Counter}`);
     }   
     if (this.winText) {
         this.winText.setText(`${Localization.get('you_win')}`);
