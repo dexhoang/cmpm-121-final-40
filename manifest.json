@@ -1,0 +1,22 @@
+{
+    "name": "My Farming Game",
+    "short_name": "FarmGame",
+    "description": "A fun farming game you can play offline!",
+    "icons": [
+      {
+        "src": "assets/farmericon.png",
+        "sizes": "192x192",
+        "type": "image/png"
+      },
+      {
+        "src": "assets/farmericon.png",
+        "sizes": "512x512",
+        "type": "image/png"
+      }
+    ],
+    "start_url": "./index.html",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#21a99c"
+  }
+  
