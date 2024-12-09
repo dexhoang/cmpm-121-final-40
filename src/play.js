@@ -141,7 +141,7 @@ class Play extends Phaser.Scene {
         this.weatherText = this.add.text(
             350,
             this.cameras.main.height -28,
-            "Weather: Normal",
+            `${Localization.get('weather')}: ${Localization.get('Normal')}`,
             { font: "20px Arial", color: "#ffffff" }
         );
 
@@ -244,13 +244,13 @@ class Play extends Phaser.Scene {
         if (this.weatherAppliedToday) return; // Prevent applying weather effects more than once per day
 
         const weatherConditions = this.parsedData.weather_randomization;
-        let activeWeather = "Normal"; // Default weather
+        this.activeWeather = `${Localization.get('Normal')}`; // Default weather
     
         // Iterate through weather conditions from YAML
         Object.entries(weatherConditions).forEach(([weatherType, config]) => {
             if (config.isActive && this.dayCounter % config.interval === 0) {
                 console.log(`Weather type active: ${weatherType}`);
-                activeWeather = weatherType;
+                this.activeWeather = weatherType;
     
                 // Apply the effects of the active weather type to the fields
                 this.applyEffectsToFields(config.effects);
@@ -260,7 +260,7 @@ class Play extends Phaser.Scene {
     
         // Update the weather text to reflect the active weather
         if (this.weatherText) {
-            this.weatherText.setText(`Weather: ${activeWeather}`);
+            this.weatherText.setText(`${Localization.get('weather')}: ${Localization.get(`${this.activeWeather}`)}`);
         }
 
         this.weatherAppliedToday = true; // Set flag after applying weather effects
@@ -298,7 +298,7 @@ class Play extends Phaser.Scene {
     incrementCounter() {
         this.stage3Counter++;
         if (this.counterText) {
-            this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
+            this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
         }
         this.undoStack.push(this.getCurrentState());
     }
@@ -338,7 +338,7 @@ class Play extends Phaser.Scene {
             // Reset plant state
             if (field.plantLevel === 3) {
                 this.stage3Counter--;
-                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
+                this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
             }
             field.plantLevel = 0;
             this.saveGameState();
@@ -401,7 +401,7 @@ class Play extends Phaser.Scene {
             this.updatePlantTexture(field, 0);
             this.stage3Counter--;
             
-            this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
+            this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
         } else {
             console.log(`No plant to reap in field ${field.index}`);
         }
@@ -554,7 +554,7 @@ class Play extends Phaser.Scene {
         this.stage3Counter = state.stage3Counter || 0;
     
         // Update UI
-        this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`);
+        this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
         this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
 
         console.log("State restored:", state);
@@ -808,10 +808,13 @@ updateLocalizedText() {
         this.waterText.setText(Localization.get('Water Level'));
     }
     if (this.counterText) {
-        this.counterText.setText(`${Localization.get('Stage 3 Plants')} ${this.stage3Counter}`);
+        this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
     }   
     if (this.winText) {
         this.winText.setText(`${Localization.get('you_win')}`);
+    } 
+    if (this.weatherText) {
+        this.weatherText.setText(`${Localization.get('weather')}: ${Localization.get(`${this.activeWeather}`)}`);
     } 
 }
 
@@ -870,6 +873,7 @@ setupHtmlButtons() {
         scene.saveGameState(); // Save the new game state
         scene.dayText.setText(`${Localization.get('days')}: ${scene.dayCounter}`); // Update day counter UI
         console.log('Next day triggered.');
+        scene.weatherAppliedToday = false;
     });
     
     // Add event listeners to Yes and No buttons
@@ -927,3 +931,5 @@ handleTapMovement(pointer) {
     console.log(`Farmer moving to: (${clampedX}, ${clampedY})`);
 }
 }
+
+// 

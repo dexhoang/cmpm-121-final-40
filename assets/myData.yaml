@@ -15,13 +15,13 @@ weather_randomization:
       sun_decrease: 0.8 # 20% decrease in plant sun levels
       water_increase: 0.6 # 40% increase in plant water levels
   Drought:
-    isActive: false
+    isActive: true
     interval: 7 # Applies drought event every 7 days
     effects:
       sun_increase: 0.8 # 20% increase in plant sun levels
       water_decrease: 0.3 # 70% decrease in plant water levels
   Winter:
-    isActive: false
+    isActive: true
     interval: 60 # Applies winter event every 30 days
     effects:
       plant_life: 0.9 # 10% chance of plant living

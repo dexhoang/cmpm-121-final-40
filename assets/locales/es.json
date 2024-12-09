@@ -21,13 +21,18 @@
     "loaded": "¡Juego cargado!",
     "new": "Iniciando un juego nuevo...",
     "stage3": "Plantas en etapa 3",
-    "water": "Agua",
-    "sun": "Sol",
+    "water": "Nivel de Agua",
+    "sun": "Nivel de Sol",
     "no-save": "No se encontró ninguna partida en la ranura",
     "no-save2": "No se encontró ninguna partida guardada. Iniciando un nuevo juego...",
     "loadSlot1": "Cargar Ranura 1",
     "loadSlot2": "Cargar Ranura 2",
     "loadSlot3": "Cargar Ranura 3",
+    "weather": "Clima",
+    "Normal": "Normal",
+    "Storm": "Tormenta",
+    "Drought": "Sequía",
+    "Winter": "Invierno",
     "you_win": "¡Ganaste!"
   }
   
