@@ -53,10 +53,70 @@ Our team hopes to complete this final project in a timely manner without having 
 
 ## How we satisfied the software requirements
 
-### [F0.a - F0.g] Same as last week.
-### [F1.a - F1.d] Same as the last entry.
-### [F2.a] 
-### [F2.b]
+### [F0.a - F0.g] No major changes were made.
+### [F1.a - F1.d] No major changes were made.
+### [F2.a] Our external DSL is based on YAML data language. In our YAML file the player is able to change gameplay scenarios such as starting conditions (grid_cols, grid_rows), victory conditions (third_stage_plants), and even schedule different weather events like storms, droughts, and winter that occur at intervals. The player is given the ability to change the effects or each weather event and whether or not it is active. 
+```
+weather_randomization:
+  Storm:
+    isActive: true
+    interval: 10 # Applies weather event every (interval) day(s)
+    effects:
+      sun_decrease: 0.8 # 20% decrease in plant sun levels
+      water_increase: 0.6 # 40% increase in plant water levels
+```
+### In this example scenario, the player is setting the weather event Storm to active meaning that it is able to occur during gameplay. The interval is set to 10 meaning that for every 10 days the weather event Storm will occur. The effects contain sun_decrease and water_increase that are set to percentages. In this example, there is a 20% decrease in each plant's sun level and a 40% increase in each plant's water level. 
+### [F2.b] Our internal DSL is using the host language Javascript/Phaser3. 
+```
+class PlantType {
+    constructor(name) {
+        this.name = name;
+        this.conditions = [];
+    }
+
+    requiresWater(operator, value) {
+        this.conditions.push({ type: "water", operator, value });
+        return this;
+    }
+...
+
+    canGrow(field, neighbors) {
+        return this.conditions.every(condition => {
+            switch (condition.type) {
+                case "water":
+                    return eval(`${field.waterLevel} ${condition.operator} ${condition.value}`);
+                case "neighborPlantLevel":
+                    return neighbors.some(neighbor => eval(`${neighbor.plantLevel} ${condition.operator} ${condition.value}`));
+                case "neighborSunLevel":
+                    return neighbors.every(neighbor => eval(`${neighbor.sunLevel} ${condition.operator} ${condition.value}`));
+                default:
+                    return false;
+            }
+        });
+    }
+}
+
+const Sunflower = new PlantType("Sunflower")
+    .requiresWater(">", 50)
+    .requiresNeighborPlantLevel(">", 0)
+    .build();
+
+const plantRegistry = {
+    Sunflower: Sunflower,
+};
+
+// Checking whether the plant can grow
+const field = { waterLevel: 60, sunLevel: 40 };
+const neighbors = [
+    { plantLevel: 1, sunLevel: 30 },
+    { plantLevel: 0, sunLevel: 20 }
+];
+
+const sunflowerCanGrow = plantRegistry.Sunflower.canGrow(field, neighbors);
+console.log("Can Sunflower grow?", sunflowerCanGrow);
+
+```
+### In this code example, the PlantType class allows the player to define the growth conditions for different plant types as shown for Sunflower. In this example, Sunflower needs a water level greater than 50 and at least one neighboring plant with a plant level greater than 0. The function canGrow checks for these conditions and returns when conditions for the plant type are met. Our DSL uses JavaScript's built-in features which makes adding new conditions easy for the player. Javascript also allows our DSL to use features such as eval(), arrays, objects, and dynamic typing which be difficult to replicate in an external DSL.
 ### [F2.c] We switched from Phaser Typescript to Phaser Javascript. We did this because it supports a wide range of libraries and frameworks, along with simpler syntax. This allowed us to fix the issues that we couldn't fix originally before the switch, such as our undo/redo button. Overall, our game flows better due to this switch. The switch was done by carrying over the existing Typescript logic and structure, while changing up some formats that Javascript doesn't carry. The Phaser 3 API was carried over as well as it supports both languages. We did not run into any issues trying to run it, as we have experience in Javascript. 
 
 ## Reflection
@@ -66,9 +126,9 @@ Our team hopes to complete this final project in a timely manner without having 
 
 ## How we satisfied the software requirements
 
-### [F0.a - F0.g] Same as last week.
-### [F1.a - F1.d] Same as the last entry.
-### [F2.a-F2.d] Same as last entry. 
+### [F0.a - F0.g] No major changes were made.
+### [F1.a - F1.d] No major changes were made.
+### [F2.a-F2.d] No major changes were made.
 ### [F3.a Internationalization] The game uses a localization function to translate the texts and messages between different languages, making it switchable to different languages including english. The player is able to switch different languages using the scroll buttotn by the canvas. It's able to support a logographic script and a right to left script for languages that need those scripts such as chinese and arabic. When adding more languages, all you should need to do is add another file into the locales file, and make it look similar to the english file. You shouldn't need to change anyhting else. I used a lot of debugging to determine if the game is being translated. The code below shows which json file is being used and what that file constains. 
             console.log("language: " + `assets/locales/${languageCode}.json`);
             const response = await fetch(`assets/locales/${languageCode}.json`);
@@ -79,8 +139,8 @@ Our team hopes to complete this final project in a timely manner without having 
             console.log(JSON.stringify(this.languageData, null, 2));  // Log the loaded data
             
 ### [F3.b Localization] The player is able to switch different languages with the scroll buttotn by the canvas. They can switch between english, spanish, chinese(logographic) and arabic(right to left). I used chatGPT to help tranlsate the languages in en.json to the other 3 languages. I tried using google translate but with the chinese and arabic, it's hard to determin if the language is consistent with it's own symbols. The game is set up in english origianlly but the player has the option to change it after launching the game, so there's no 4 different versions of the game. 
-### [F3.c] If the player is on mobile they are able to add this app to their homescreen and have it function much like a normal app. This was done through the manifest.json file which defines this program as a progressive web app (PWA) and specifying various things like starting url, app icon, and more. 
-### [F3.d] The player is able to play this game even while offline if they have it added to their homepage. This is due to serviceworker.js caching the game files during the install event which allows for another event handler, fetch, to load the aforementioned cached assets even when the device is offline. 
+### [F3.c] If the player is on mobile they are able to add this app to their homescreen and have it function much like a normal app. This was done through the manifest.json file which defines this program as a progressive web app (PWA) and specifying various things like starting url, app icon, and more. I was able to accomplish this portion thanks to the demo that Professor Smith sent in canvas as well as this video here: https://www.youtube.com/watch?v=YSGLw4T8BgQ. 
+### [F3.d] The player is able to play this game even while offline if they have it added to their homepage. This is due to serviceworker.js caching the game files during the install event which allows for another event handler, fetch, to load the aforementioned cached assets even when the device is offline. Some changes we made were to play with the phone in landscape as it the player movement and planting would often cause problems with viewing the game when played in portrait mode. 
 
 ## Reflection
 ### We learned that we needed to add more button functions as well as other functions for making the game work on mobile. We had to make a quick change to make buttons from in the game to html buttons. When we worked on getting it to work on mobile and as an app, we realized that it would be better if the buttons were to be on the web browser so that the player doesn't have to deal with the avatar moving to the buttons in the game. 
