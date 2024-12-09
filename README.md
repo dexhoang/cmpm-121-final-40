@@ -79,8 +79,8 @@ Our team hopes to complete this final project in a timely manner without having 
             console.log(JSON.stringify(this.languageData, null, 2));  // Log the loaded data
             
 ### [F3.b Localization] The player is able to switch different languages with the scroll buttotn by the canvas. They can switch between english, spanish, chinese(logographic) and arabic(right to left). I used chatGPT to help tranlsate the languages in en.json to the other 3 languages. I tried using google translate but with the chinese and arabic, it's hard to determin if the language is consistent with it's own symbols. The game is set up in english origianlly but the player has the option to change it after launching the game, so there's no 4 different versions of the game. 
-### [F3.c]
-### [F3.d]
+### [F3.c] If the player is on mobile they are able to add this app to their homescreen and have it function much like a normal app. This was done through the manifest.json file which defines this program as a progressive web app (PWA) and specifying various things like starting url, app icon, and more. 
+### [F3.d] The player is able to play this game even while offline if they have it added to their homepage. This is due to serviceworker.js caching the game files during the install event which allows for another event handler, fetch, to load the aforementioned cached assets even when the device is offline. 
 
 ## Reflection
 ### We learned that we needed to add more button functions as well as other functions for making the game work on mobile. We had to make a quick change to make buttons from in the game to html buttons. When we worked on getting it to work on mobile and as an app, we realized that it would be better if the buttons were to be on the web browser so that the player doesn't have to deal with the avatar moving to the buttons in the game. 
