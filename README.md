@@ -57,10 +57,10 @@ Our team hopes to complete this final project in a timely manner without having 
 ### [F1.a - F1.d] Same as the last entry.
 ### [F2.a] 
 ### [F2.b]
-### [F2.c]
-### [F2.d]
+### [F2.c] We switched from Phaser Typescript to Phaser Javascript. We did this because it supports a wide range of libraries and frameworks, along with simpler syntax. This allowed us to fix the issues that we couldn't fix originally before the switch, such as our undo/redo button. Overall, our game flows better due to this switch. The switch was done by carrying over the existing Typescript logic and structure, while changing up some formats that Javascript doesn't carry. The Phaser 3 API was carried over as well as it supports both languages. We did not run into any issues trying to run it, as we have experience in Javascript. 
 
 ## Reflection
+### We definitely had less time to do this part because we switched from Unity to Typescript previously, but because we have more experience in these two languages it definitely made up for the lost time. The switch itself was smooth because Phaser supports both languages, so there were no drastic issues there. 
 
 # Devlog Entry - [Dec 8, 2024]
 
