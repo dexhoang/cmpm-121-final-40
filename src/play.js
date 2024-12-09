@@ -83,7 +83,8 @@ class Play extends Phaser.Scene {
                     sprite: fieldSprite,
                     waterLevel: 0,
                     sunLevel: 0,
-                    plantLevel: 0
+                    plantLevel: 0,
+                    plantType: null
                 };
                 this.fields.push(field);
                 fieldIndex++;
@@ -111,7 +112,7 @@ class Play extends Phaser.Scene {
         this.counterText = this.add.text(
             this.cameras.main.width / 2.4,
             this.cameras.main.height - 6,
-            `${Localization.get('Stage 3 Plants')}: ${this.stage3Counter}`,
+            `${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`,
             { font: '20px Arial' }
         );
         this.counterText.setOrigin(0.5, 1);
@@ -163,10 +164,136 @@ class Play extends Phaser.Scene {
 
         // Listen for language changes and update texts
         document.addEventListener('languageChanged', this.updateLocalizedText.bind(this));
+
+        // Checks plant type's conditions
+        class PlantType {
+            constructor(name) {
+                this.name = name;
+                this.stageConditions = {};
+            }
+        
+            setConditions(stage, conditions) {
+                this.stageConditions[stage] = conditions;
+                return this;
+            }
+        
+            canGrow(field, neighbors, stage) {
+                const conditions = this.stageConditions[stage];
+                if (!conditions) {
+                    console.warn(`No conditions defined for stage ${stage} of ${this.name}`);
+                    return false;
+                }
+        
+                // Check if all conditions for the stage are met
+                return conditions.every(condition => {
+                    switch (condition.type) {
+                        case "water":
+                            return this.compare(field.waterLevel, condition.operator, condition.value);
+                        case "neighborPlantLevel":
+                            return neighbors.some(n => 
+                                this.compare(n.plantLevel, condition.operator, condition.value)
+                            );
+                        case "neighborSunLevel":
+                            return neighbors.every(n => 
+                                this.compare(n.sunLevel, condition.operator, condition.value)
+                            );
+                        default:
+                            console.warn(`Unknown condition type: ${condition.type}`);
+                            return false;
+                    }
+                });
+            }
+        
+            compare(value, operator, target) {
+                switch (operator) {
+                    case ">": return value > target;
+                    case ">=": return value >= target;
+                    case "<": return value < target;
+                    case "<=": return value <= target;
+                    case "==": return value == target;
+                    case "!=": return value != target;
+                    default:
+                        console.warn(`Unknown operator: ${operator}`);
+                        return false;
+                }
+            }
+        }
+        
+        // Create plant type
+        class PlantTypeBuilder {
+            constructor(name) {
+                this.plantType = new PlantType(name);
+            }
+        
+            setStageConditions(stage, conditions) {
+                this.plantType.setConditions(stage, conditions);
+                return this;
+            }
+        
+            build() {
+                return this.plantType;
+            }
+        }
+
+        // Create plant types with conditions
+        const Sunflower = new PlantTypeBuilder("Sunflower")
+            .setStageConditions(2, [
+                { type: "water", operator: ">", value: 50 }, // Needs water level > 50 
+                { type: "neighborPlantLevel", operator: ">", value: 0 }, // Needs a neighbor plant level > 0
+            ])
+            .setStageConditions(3, [
+                { type: "water", operator: ">", value: 100 }, // Needs water level > 50 
+                { type: "neighborSunLevel", operator: ">", value: 20 }, // At least one neighbor needs to have sun level > 20
+            ])
+            .build();
+    
+        const Mushroom = new PlantTypeBuilder("Mushroom")
+            .setStageConditions(2, [
+                { type: "water", operator: ">", value: 30 }, // Needs water level > 30
+                { type: "neighborSunLevel", operator: ">", value: 5 }, // All neighbors need to have sun level > 5
+            ])
+            .setStageConditions(3, [
+                { type: "water", operator: ">", value: 60 }, // Needs water level > 60
+                { type: "neighborSunLevel", operator: ">", value: 15 }, // All neighbors need to have sun level > 15
+            ])
+            .build();
+        
+        const Herb = new PlantTypeBuilder("Herb")
+            .setStageConditions(2, [
+                { type: "water", operator: ">", value: 20 }, // Needs water level > 20
+                { type: "neighborPlantLevel", operator: "<=", value: 0 }, // At least one neighboring field without a plant
+            ])
+            .setStageConditions(3, [
+                { type: "water", operator: ">", value: 50 }, // Needs water level > 50
+            ])
+            .build();
+
+            this.plantRegistry = { Sunflower, Mushroom, Herb };
     }
 
     update() {
         const moveSpeed = 3; 
+
+        this.fields.forEach(field => {
+            if (field.plantType) {
+                const neighbors = this.getNeighbors(field);
+        
+                if (field.plantLevel === 1 && field.plantType.canGrow(field, neighbors, 2)) {
+                    console.log(`Field ${field.index}: Growing to Level 2`);
+                    this.updatePlantTexture(field, 2);
+                    field.plantLevel = 2;
+                } else if (field.plantLevel === 2 && field.plantType.canGrow(field, neighbors, 3)) {
+                    console.log(`Field ${field.index}: Growing to Level 3`);
+                    this.updatePlantTexture(field, 3);
+                    field.plantLevel = 3;
+                    this.incrementCounter();
+                } else {
+                    console.log(`Field ${field.index}: Conditions not met for growth`);
+                }
+            }
+        });
+        
+        
             
         if (this.farmer) {
             if (this.keyA && this.keyA.isDown) {
@@ -199,35 +326,6 @@ class Play extends Phaser.Scene {
         }
 
         this.applyWeatherEffects();
-        
-    
-        if (this.fields && this.fields.length > 0) {
-            this.fields.forEach(field => {
-                const waterThreshold = this.parsedData.starting_conditions.water_threshold;
-                const sunThreshold = this.parsedData.starting_conditions.sun_threshold;
-                const finalWaterThreshold = waterThreshold * 2;
-                const finalSunThreshold = sunThreshold * 2;
-    
-                const neighborsWithPlants = this.getNeighbors(field).filter(neighbor => neighbor.plantLevel > 0).length;
-                const adjustedWaterThreshold = waterThreshold + 10 * neighborsWithPlants;
-                const finalAdjustedWaterThreshold = finalWaterThreshold + 10 * neighborsWithPlants;
-    
-                if (field.waterLevel >= adjustedWaterThreshold && field.sunLevel >= sunThreshold) {
-                    if (field.plantLevel === 1) {
-                        this.updatePlantTexture(field, 2);
-                        field.waterLevel -= adjustedWaterThreshold;
-                    }   
-                }
-    
-                if (field.waterLevel >= finalAdjustedWaterThreshold && field.sunLevel >= finalSunThreshold) {
-                    if (field.plantLevel === 2) {
-                        this.updatePlantTexture(field, 3);
-                        this.incrementCounter();
-                        field.waterLevel -= finalWaterThreshold;
-                    }
-                }
-            })
-        }
 
         if (this.stage3Counter >= this.parsedData.victory_conditions.third_stage_plants) {
             this.winText = this.add.text(
@@ -286,6 +384,7 @@ class Play extends Phaser.Scene {
                 field.sunLevel = 0;
                 this.updatePlantTexture(field, 1);
                 this.stage3Counter --;
+                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
             }
             field.sunLevel = Math.round(field.sunLevel);
             field.waterLevel = Math.round(field.waterLevel);
@@ -298,7 +397,7 @@ class Play extends Phaser.Scene {
     incrementCounter() {
         this.stage3Counter++;
         if (this.counterText) {
-            this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+            this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
         }
         this.undoStack.push(this.getCurrentState());
     }
@@ -311,10 +410,55 @@ class Play extends Phaser.Scene {
     }
 
     handleFieldSelection(field) {
-        // Deselect the previous field
+        // Log the field's current conditions
+        console.log(`Field ${field.index} Conditions:`);
+        console.log(`  Water Level: ${field.waterLevel}`);
+        console.log(`  Sun Level: ${field.sunLevel}`);
+        console.log(`  Plant Level: ${field.plantLevel}`);
+        console.log(`  Plant Type: ${field.plantType ? field.plantType.name : "None"}`);
+    
+        // Log growing conditions if the plant type is assigned
+        if (field.plantType) {
+            // Log stage-specific conditions
+            const stage = field.plantLevel + 1; // Determine the next growth stage
+            const conditions = field.plantType.stageConditions[stage];
+    
+            if (conditions) {
+                console.log(`  Growing Conditions for ${field.plantType.name}, Stage ${stage}:`);
+                conditions.forEach((condition, i) => {
+                    switch (condition.type) {
+                        case "water":
+                            console.log(`    Condition ${i + 1}: Water Level ${condition.operator} ${condition.value}`);
+                            break;
+                        case "neighborPlantLevel":
+                            console.log(`    Condition ${i + 1}: Neighbor Plant Level ${condition.operator} ${condition.value}`);
+                            break;
+                        case "neighborSunLevel":
+                            console.log(`    Condition ${i + 1}: Neighbor Sun Level ${condition.operator} ${condition.value}`);
+                            break;
+                        default:
+                            console.log(`    Condition ${i + 1}: Unknown condition type (${condition.type})`);
+                            break;
+                    }
+                });
+            } else {
+                console.log(`  No conditions defined for Stage ${stage} of ${field.plantType.name}`);
+            }
+        } else {
+            console.log("  No plant type assigned to this field.");
+        }
+    
+        // Log neighbor details
+        const neighbors = this.getNeighbors(field);
+        console.log(`  Neighbors (${neighbors.length} total):`);
+        neighbors.forEach((neighbor, i) => {
+            console.log(`    Neighbor ${i} - Plant Level: ${neighbor.plantLevel}, Sun Level: ${neighbor.sunLevel}, Water Level: ${neighbor.waterLevel}`);
+        });
+    
+        // Existing functionality
         if (this.reapButton) this.reapButton.destroy();
         if (this.sowButton) this.sowButton.destroy();
-        
+    
         // Display Reap and Sow buttons
         const buttonY = field.sprite.y - 20;
         this.reapButton = this.add.text(field.sprite.x - 20, buttonY, Localization.get('reap'), {
@@ -334,11 +478,11 @@ class Play extends Phaser.Scene {
             console.log(`Reaped field ${field.index}`);
             this.undoStack.push(this.getCurrentState()); // Save the current state before reaping
             field.sprite.setTexture('field');
-            
+    
             // Reset plant state
             if (field.plantLevel === 3) {
                 this.stage3Counter--;
-                this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
             }
             field.plantLevel = 0;
             this.saveGameState();
@@ -362,37 +506,39 @@ class Play extends Phaser.Scene {
         });
     }
     
+    
+    
     showSowMenu(field) {
-        // Show plant choices near the selected field
-        const sunflower = Localization.get('sunflower');
-        const mushroom = Localization.get('mushroom');
-        const herb = Localization.get('herb');
-
         const options = ['Sunflower', 'Mushroom', 'Herb'];
         const optionY = field.sprite.y - 20;
         const choiceTexts = [];
     
-        options.forEach((key, index) => {
-            const localizedText = Localization.get(key);
-
-            // Create button for each option
-            const choiceText = this.add.text(field.sprite.x + index * 80 - 80, optionY, localizedText, {
-                fontSize: '12px',
-                backgroundColor: '#358f39',
-                padding: { x: 5, y: 2 },
-            }).setInteractive();
-            
-            // Update field with selected plant
+        options.forEach((plantName, index) => {
+            const localizedText = Localization.get(plantName);
+            const choiceText = this.add.text(
+                field.sprite.x + index * 80 - 80,
+                optionY,
+                localizedText,
+                {
+                    fontSize: '12px',
+                    backgroundColor: '#358f39',
+                    padding: { x: 5, y: 2 },
+                }
+            ).setInteractive();
+    
             choiceText.on('pointerdown', () => {
-                console.log(`Planted ${key} on field ${field.index}`);
-                field.sprite.setTexture(key);
+                console.log(`Planted ${plantName} on field ${field.index}`);
+                field.plantType = this.plantRegistry[plantName]; // Use this.plantRegistry
+                field.sprite.setTexture(plantName);
                 field.plantLevel = 1;
-                choiceTexts.forEach(text => text.destroy());  // Remove plant choice buttons
+                choiceTexts.forEach(text => text.destroy());
                 this.undoStack.push(this.getCurrentState());
             });
+    
             choiceTexts.push(choiceText);
         });
     }
+    
     
     reap(field) {
         if (field.plantLevel === 3) {
@@ -401,7 +547,7 @@ class Play extends Phaser.Scene {
             this.updatePlantTexture(field, 0);
             this.stage3Counter--;
             
-            this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+            this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
         } else {
             console.log(`No plant to reap in field ${field.index}`);
         }
@@ -478,22 +624,40 @@ class Play extends Phaser.Scene {
 
     getNeighbors(field) {
         const neighbors = [];
-        const fieldIndex = field.index;
-        const gridCols = this.parsedData.starting_conditions.grid_cols;
-        const gridRows = this.parsedData.starting_conditions.grid_rows;
-        const row = Math.floor(fieldIndex / gridCols);
-        const col = fieldIndex % gridCols;
-        if (!this.fields || this.fields.length === 0) {
-            console.error('Fields array is empty or not initialized!');
-            return neighbors;
-        }
-        // Check neighbors in 4 directions (up, down, left, right)
-        if (row > 0) neighbors.push(this.fields[fieldIndex - gridCols]);
-        if (row < gridRows - 1) neighbors.push(this.fields[fieldIndex + gridCols]);
-        if (col > 0) neighbors.push(this.fields[fieldIndex - 1]);
-        if (col < gridCols - 1) neighbors.push(this.fields[fieldIndex + 1]);
+        const col = field.index % this.parsedData.starting_conditions.grid_cols; // Column index
+        const row = Math.floor(field.index / this.parsedData.starting_conditions.grid_cols); // Row index
+    
+        // Define relative neighbor positions (N, S, E, W, NE, NW, SE, SW)
+        const deltas = [
+            { dx: -1, dy: 0 },  // West
+            { dx: 1, dy: 0 },   // East
+            { dx: 0, dy: -1 },  // North
+            { dx: 0, dy: 1 },   // South
+            { dx: -1, dy: -1 }, // Northwest
+            { dx: 1, dy: -1 },  // Northeast
+            { dx: -1, dy: 1 },  // Southwest
+            { dx: 1, dy: 1 },   // Southeast
+        ];
+    
+        deltas.forEach(delta => {
+            const neighborCol = col + delta.dx;
+            const neighborRow = row + delta.dy;
+    
+            // Ensure neighbor is within grid bounds
+            if (
+                neighborCol >= 0 &&
+                neighborCol < this.parsedData.starting_conditions.grid_cols &&
+                neighborRow >= 0 &&
+                neighborRow < this.parsedData.starting_conditions.grid_rows
+            ) {
+                const neighborIndex = neighborRow * this.parsedData.starting_conditions.grid_cols + neighborCol;
+                neighbors.push(this.fields[neighborIndex]); // Add the neighbor field
+            }
+        });
+    
         return neighbors;
     }
+    
 
     saveGameState(slot) {
         const currentState = this.getCurrentState(); // Get the current game state
@@ -554,7 +718,7 @@ class Play extends Phaser.Scene {
         this.stage3Counter = state.stage3Counter || 0;
     
         // Update UI
-        this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+        this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
         this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
 
         console.log("State restored:", state);
@@ -696,20 +860,6 @@ class Play extends Phaser.Scene {
                 this.time.delayedCall(1000, () => promptText.destroy()); // Remove text after 1 second
             });
         }
-    
-        // Load buttons for slots
-        for (let slot = 1; slot <= 3; slot++) {
-            this.loadButton = this.add.text(500, 70 + (slot - 1) * 50, `Load Slot ${slot}`, {
-                fontSize: '20px',
-                backgroundColor: '#21a99c',
-                padding: { x: 20, y: 10 },
-                align: 'center'
-            }).setInteractive();
-    
-            this.loadButton.on('pointerdown', () => {
-                this.loadGameState(slot);
-            });
-        }
     }
 
     setupUndoRedoButtons() {
@@ -808,7 +958,7 @@ updateLocalizedText() {
         this.waterText.setText(Localization.get('Water Level'));
     }
     if (this.counterText) {
-        this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter}`);
+        this.counterText.setText(`${Localization.get('Stage 3 Plants')} ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
     }   
     if (this.winText) {
         this.winText.setText(`${Localization.get('you_win')}`);

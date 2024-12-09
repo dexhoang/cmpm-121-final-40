@@ -1,8 +1,6 @@
 starting_conditions:
   grid_cols: 7 # Number of grid columns
   grid_rows: 4 # Number of grid rows
-  water_threshold: 20 # Required amount of water for plant to grow 
-  sun_threshold: 30 # Required amount of sun for plant to grow 
 
 victory_conditions:
   third_stage_plants: 10 # Required amount of third stage plants for player to win
