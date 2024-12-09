@@ -1,0 +1,21 @@
+/* Use Flexbox to center buttons */
+.button-container {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr); /* 3 columns */
+    gap: 10px;
+    justify-items: center; /* Center buttons within their cells */
+}
+
+
+/* Style individual buttons */
+/* For overlay positioning */
+button {
+    position: absolute;
+    top: 50%; /* Adjust as needed */
+    left: 50%;
+    transform: translate(-50%, -50%); /* Center the button */
+}
+
+button:hover {
+    background-color: #0056b3;
+}
