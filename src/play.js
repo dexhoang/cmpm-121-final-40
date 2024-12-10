@@ -888,19 +888,11 @@ showWaterAndSunText(field) {
         { font: '20px Arial', fill: 'white' }
     );
 
-    /*this.updateLocalizedText(this.dayText, `${Localization.get('days')}: ${this.dayCounter}`);
-    this.updateLocalizedText(this.weatherText, `${Localization.get('weather')}: ${Localization.get(`${this.activeWeather}`)}`);
-    this.updateLocalizedText(this.counterText, `${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
-    this.updateLocalizedText(this.winText, `${Localization.get('you_win')}`);
-    this.updateLocalizedText(this.reapButton, Localization.get('reap'));
-    this.updateLocalizedText(this.sowButton, Localization.get('sow'));
-    this.updateLocalizedText(this.watertext, `${Localization.get('water')}: ${field.waterLevel}`);
-    this.updateLocalizedText(this.sunText, `${Localization.get('sun')}: ${field.sunLevel}`);*/
-
 }
 
 // Function to update localized texts in the game
 updateLocalizedText() {
+
     if (this.dayText) {
         this.dayText.setText(`${Localization.get('days')}: ${this.dayCounter}`);
     }
@@ -911,10 +903,10 @@ updateLocalizedText() {
         this.sowButton.setText(Localization.get('sow'));
     }
     if (this.sunText) {
-        this.sunText.setText(`Localization.get('sun'): ${field.sunLevel}`);
+        this.sunText.setText(`${Localization.get('sun')}: ${field.sunLevel}`);
     }
     if (this.waterText) {
-        this.waterText.setText(`Localization.get('water'): ${field.waterLevel}`);
+        this.waterText.setText(`${Localization.get('water')}: ${field.waterLevel}`);
     }
     if (this.counterText) {
         this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
