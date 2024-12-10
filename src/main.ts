@@ -752,6 +752,7 @@ return state.map(field => ({
 }
 
 
+
 private restoreState(state: Field[]) {
  this.fields.forEach((field, index) => {
    const savedField = state[index];
@@ -799,7 +800,7 @@ private getCurrentState(): any {
     sunLevel: field.sunLevel,
     plantLevel: field.plantLevel
   }));
-}
+} Hello people 
  
 // Updates plant texture to next stage
 private updatePlantTextures(field: Field, nextStage: number) {
