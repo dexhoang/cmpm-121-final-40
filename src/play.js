@@ -112,7 +112,7 @@ class Play extends Phaser.Scene {
         this.counterText = this.add.text(
             this.cameras.main.width / 2.4,
             this.cameras.main.height - 6,
-            `${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`,
+            `${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`,
             { font: '20px Arial' }
         );
         this.counterText.setOrigin(0.5, 1);
@@ -123,7 +123,7 @@ class Play extends Phaser.Scene {
         this.dayText = this.add.text(
             50,
             this.cameras.main.height - 6,
-            `${Localization.get('Day')}: ${this.dayCounter}`,
+            `${Localization.get('days')}: 1`,
             { font: '20px Arial' }
         );
         this.dayText.setOrigin(0.5, 1);
@@ -132,7 +132,7 @@ class Play extends Phaser.Scene {
         this.nextDayButton.on('pointerdown', () => {
             this.dayCounter++;
             this.undoStack.push(this.getCurrentState());
-            this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
+            this.dayText?.setText(`${Localization.get('days')}: ${this.dayCounter}`);
             this.assignRandomLevels();
             this.saveGameState();
             this.weatherAppliedToday = false;
@@ -149,16 +149,10 @@ class Play extends Phaser.Scene {
         // Handle prompt for continuing previous game
         this.handleGameStatePrompt();
 
-        // Save/Load buttons
-        this.setupSaveLoadButtons();
-
         setInterval(() => {
             this.saveGameState();
             console.log("Game auto-saved");
         }, 60000);
-
-        // Undo and Redo buttons
-        this.setupUndoRedoButtons();
 
         this.undoStack.push(this.getCurrentState()); // Initialize undo stack
 
@@ -384,7 +378,7 @@ class Play extends Phaser.Scene {
                 field.sunLevel = 0;
                 this.updatePlantTexture(field, 1);
                 this.stage3Counter --;
-                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+                this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
             }
             field.sunLevel = Math.round(field.sunLevel);
             field.waterLevel = Math.round(field.waterLevel);
@@ -397,7 +391,7 @@ class Play extends Phaser.Scene {
     incrementCounter() {
         this.stage3Counter++;
         if (this.counterText) {
-            this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+            this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
         }
         this.undoStack.push(this.getCurrentState());
     }
@@ -482,7 +476,7 @@ class Play extends Phaser.Scene {
             // Reset plant state
             if (field.plantLevel === 3) {
                 this.stage3Counter--;
-                this.counterText.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+                this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
             }
             field.plantLevel = 0;
             this.saveGameState();
@@ -547,7 +541,7 @@ class Play extends Phaser.Scene {
             this.updatePlantTexture(field, 0);
             this.stage3Counter--;
             
-            this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+            this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
         } else {
             console.log(`No plant to reap in field ${field.index}`);
         }
@@ -718,8 +712,8 @@ class Play extends Phaser.Scene {
         this.stage3Counter = state.stage3Counter || 0;
     
         // Update UI
-        this.counterText?.setText(`${Localization.get('Stage 3 Plants')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
-        this.dayText?.setText(`${Localization.get('Day')}: ${this.dayCounter}`);
+        this.counterText?.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+        this.dayText?.setText(`${Localization.get('days')}: ${this.dayCounter}`);
 
         console.log("State restored:", state);
     }
@@ -834,51 +828,6 @@ class Play extends Phaser.Scene {
             this.time.delayedCall(1000, () => promptText.destroy());
         }
     }
-    
-    
-    setupSaveLoadButtons() {
-        for (let slot = 1; slot <= 3; slot++) {
-            const saveButton = this.add.text().setInteractive();
-    
-            saveButton.on('pointerdown', () => {
-                const currentState = this.getCurrentState();
-                localStorage.setItem(`gameStateSlot${slot}`, JSON.stringify(currentState));
-                console.log(`Game saved to slot ${slot}`);
-                const promptText = this.add.text(
-                    this.cameras.main.width / 2,
-                    this.cameras.main.height / 2,
-                    `${Localization.get('save')}: ${slot}`,
-                    { font: '20px Arial', color: '#ffffff' }
-                ).setOrigin(0.5, 0.5);
-                if (promptText) {
-                    promptText.setText(`${Localization.get('save')}: ${slot}`);
-                }
-                if (saveButton) {
-                    saveButton.setText(`${Localization.get('save')}: ${slot}`);
-                }
-    
-                this.time.delayedCall(1000, () => promptText.destroy()); // Remove text after 1 second
-            });
-        }
-    }
-
-    setupUndoRedoButtons() {
-        // Create Undo button
-        this.undoButton = this.add.text().setInteractive();
-    
-        this.undoButton.on('pointerdown', () => {
-            this.undo();
-            console.log("Undo action performed");
-        });
-    
-        // Create Redo button
-        this.redoButton = this.add.text().setInteractive();
-    
-        this.redoButton.on('pointerdown', () => {
-            this.redo();
-            console.log("Redo action performed");
-        });
-    }
 
     loadGameState(slot = 1) {
         const savedState = localStorage.getItem(`gameStateSlot${slot}`);
@@ -927,7 +876,7 @@ showWaterAndSunText(field) {
     this.waterText = this.add.text(
         20, 
         70, 
-        `${Localization.get('Water Level')}: ${field.waterLevel}`, 
+        `${Localization.get('water')}: ${field.waterLevel}`, 
         { font: '20px Arial', fill: 'white' }
     );
 
@@ -935,9 +884,19 @@ showWaterAndSunText(field) {
     this.sunText = this.add.text(
         20, 
         95, 
-        `${Localization.get('Sun Level')}: ${field.sunLevel}`,
+        `${Localization.get('sun')}: ${field.sunLevel}`,
         { font: '20px Arial', fill: 'white' }
     );
+
+    /*this.updateLocalizedText(this.dayText, `${Localization.get('days')}: ${this.dayCounter}`);
+    this.updateLocalizedText(this.weatherText, `${Localization.get('weather')}: ${Localization.get(`${this.activeWeather}`)}`);
+    this.updateLocalizedText(this.counterText, `${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+    this.updateLocalizedText(this.winText, `${Localization.get('you_win')}`);
+    this.updateLocalizedText(this.reapButton, Localization.get('reap'));
+    this.updateLocalizedText(this.sowButton, Localization.get('sow'));
+    this.updateLocalizedText(this.watertext, `${Localization.get('water')}: ${field.waterLevel}`);
+    this.updateLocalizedText(this.sunText, `${Localization.get('sun')}: ${field.sunLevel}`);*/
+
 }
 
 // Function to update localized texts in the game
@@ -952,20 +911,20 @@ updateLocalizedText() {
         this.sowButton.setText(Localization.get('sow'));
     }
     if (this.sunText) {
-        this.sunText.setText(Localization.get('Sun Level'));
+        this.sunText.setText(`Localization.get('sun'): ${field.sunLevel}`);
     }
     if (this.waterText) {
-        this.waterText.setText(Localization.get('Water Level'));
+        this.waterText.setText(`Localization.get('water'): ${field.waterLevel}`);
     }
     if (this.counterText) {
-        this.counterText.setText(`${Localization.get('Stage 3 Plants')} ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
+        this.counterText.setText(`${Localization.get('stage3')}: ${this.stage3Counter} / ${this.parsedData.victory_conditions.third_stage_plants}`);
     }   
     if (this.winText) {
         this.winText.setText(`${Localization.get('you_win')}`);
     } 
     if (this.weatherText) {
         this.weatherText.setText(`${Localization.get('weather')}: ${Localization.get(`${this.activeWeather}`)}`);
-    } 
+    }
 }
 
 // Inside your scene or setup function
@@ -987,17 +946,12 @@ setupHtmlButtons() {
     const noButton = document.getElementById('no');
 
     // Add event listeners to the HTML buttons
-    document.getElementById('loadSlot1').addEventListener('click', function () {
-        scene.loadGameState(1); // Load save slot 1
-    });
+    for (let slot = 1; slot <= 3; slot++) {
+        document.getElementById(`loadSlot${slot}`).addEventListener('click', function () {
+            scene.loadGameState(slot);
+        });
+    }
 
-    document.getElementById('loadSlot2').addEventListener('click', function () {
-        scene.loadGameState(2); // Load save slot 2
-    });
-
-    document.getElementById('loadSlot3').addEventListener('click', function () {
-        scene.loadGameState(3); // Load save slot 3
-    });
     document.getElementById('undo').addEventListener('click', function () {
         scene.undo();
     });
@@ -1005,16 +959,11 @@ setupHtmlButtons() {
         scene.redo();
     });
     
-    // Save buttons for slots
-    document.getElementById('saveSlot1').addEventListener('click', function () {
-        scene.saveGameState(1); // Save to slot 1
-    });
-    document.getElementById('saveSlot2').addEventListener('click', function () {
-        scene.saveGameState(2); // Save to slot 2
-    });
-    document.getElementById('saveSlot3').addEventListener('click', function () {
-        scene.saveGameState(3); // Save to slot 3
-    });
+    for (let slot = 1; slot <= 3; slot++) {
+        document.getElementById(`saveSlot${slot}`).addEventListener('click', function () {
+            scene.saveGameState(slot);
+        });
+    }
 
     document.getElementById('next_day').addEventListener('click', function () {
         scene.dayCounter++; // Increment the day counter
