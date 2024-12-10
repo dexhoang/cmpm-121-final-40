@@ -840,7 +840,7 @@ private getPreviousPlantTexture(currentTexture: string, stage: number): string {
 
   // If it's the first stage or no valid texture, return the current texture
   console.log("current texture: " + currentTexture);
-  return currentTexture;
+  return ;
 }
 
 }
